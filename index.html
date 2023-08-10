@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .container{
+      width: 90vw;
+      margin: 10vh auto;
+      height: 50vh;
+      border-bottom: 5px solid black;
+      position: relative;
+    }
+
+    .ball{
+      background-color: black;
+      border-radius: 50%;
+      height: 15px;
+      width: 15px;    
+      position: absolute;
+    }
+  </style>
+</head>
+<body>  
+  <div class="container">
+    <div class="ball" id="ball"></div>    
+  </div>
+  <div class="slider-row">
+    <input type="range" id="slider">
+    <span id="slider_velocidade"></span>
+  </div>
+  <button id="launchButton">Lançar</button>
+  <script>
+    const container = document.querySelector(".container");
+    const containerHeight = container.clientHeight;    
+    const containerWidth = container.clientWidth;        
+
+    const ball = document.getElementById("ball");
+    ball.style.left = "0%";
+    ball.style.bottom = "0%";
+    let isRight = false;    
+    let timerLancar;
+    const gravidade = -10;
+    const angulo_para_altura_distancia_max = Math.atan(4*containerHeight/containerWidth);    
+    const modulo_velocidade_maxima = (1/Math.sin(angulo_para_altura_distancia_max))*Math.sqrt(-2*gravidade*containerHeight);
+    
+    const slider = document.getElementById("slider");
+    slider.min = 0;
+    slider.max = modulo_velocidade_maxima;
+
+    const slider_number = document.getElementById("slider_velocidade");
+    slider_number.innerText = slider.value;
+    let velocidade = slider.value;
+
+    slider.addEventListener("input", () => {
+      slider_number.innerText = slider.value;
+      velocidade = slider.value;
+    });    
+    
+    const startAnimation = () => {
+      let tempo = 0;
+      let velocidade_y_inicial = velocidade*Math.sin(angulo_para_altura_distancia_max);
+      let velocidade_x = velocidade*Math.cos(angulo_para_altura_distancia_max);
+      let going_up = true;
+      clearInterval(timerLancar);
+      timerLancar = setInterval(() => {     
+        lancar(velocidade_y_inicial, velocidade_x, tempo, going_up);
+        tempo += .05;
+      }, 5);
+    };
+
+    const stopAnimation = () => {
+      clearInterval(timerLancar);
+    };
+
+    const lancar = (velocidade_y_inicial, velocidade_x, tempo, going_up) => {
+      let distancia = (velocidade_x * tempo)/containerWidth*100;
+      ball.style.left =  distancia + "%";
+
+      let altura = (velocidade_y_inicial*tempo + 0.5*gravidade * tempo * tempo)/containerHeight*100;
+      let velocidade_y = velocidade_y_inicial + gravidade*tempo;
+      going_up = velocidade_y < 0 ? false : true;
+      ball.style.bottom = altura + '%';
+      if (altura <= 0 && !going_up){
+        stopAnimation();
+        ball.style.bottom = '0%';
+      }
+    }
+
+    const launchButton = document.getElementById("launchButton");
+    launchButton.addEventListener("click", startAnimation);
+
+  </script>
+</body>
+</html>
