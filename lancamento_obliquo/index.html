@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .container{
+      width: 90vw;
+      margin: 5vh auto;
+      border-bottom: 5px solid black;
+      position: relative;
+      background-color: aquamarine;
+      margin-bottom: 0;
+    }
+
+    .ball{
+      background-color: black;
+      border-radius: 50%;
+      height: 15px;
+      width: 15px;    
+      position: absolute;
+    }
+
+    .arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      position: absolute;
+      z-index: 1;
+      transform-origin: bottom center;
+    }
+
+    #trajectoryCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slider-row{
+      display: flex;
+      justify-content: center;
+    }
+
+  </style>
+</head>
+<body>  
+  <div class="container">
+    <div class="ball" id="ball"></div>
+    <div class="arrow"></div>
+    <canvas id="trajectoryCanvas"></canvas> 
+  </div>
+  <div class="slider-row">
+    <span>Potência</span>
+    <input type="range" id="slider_velocidade">
+    <span id="slider_velocidade_texto"></span>    
+  </div>
+  <div class="slider-row">
+    <span>Inclinação</span>
+    <input type="range" id="slider_angulo">
+    <span id="slider_angulo_texto"></span>
+  </div>
+  <div class="slider-row">
+    <button id="launchButton">Lançar</button>
+  </div>
+  <script>    
+    const ball = document.getElementById("ball");
+    ball.style.left = "0%";
+    ball.style.bottom = "0%";
+
+    const container = document.querySelector(".container");
+    const containerWidth = container.clientWidth;
+
+    const canvas = document.getElementById("trajectoryCanvas");
+    const context = canvas.getContext("2d");    
+
+    let isRight = false;    
+    let timerLancar;
+    const gravidade = -10;
+
+    const modulo_velocidade_maxima = Math.sqrt(-1*gravidade*containerWidth);
+    const modulo_velocidade_minima = 0.25*modulo_velocidade_maxima;
+    const altura_maxima_container = (3*modulo_velocidade_maxima*modulo_velocidade_maxima) / (-8*gravidade);
+    
+    container.style.height = altura_maxima_container + ball.clientHeight + "px";
+    const containerHeight = container.clientHeight;
+
+    const slider_velocidade = document.getElementById("slider_velocidade");
+    slider_velocidade.min = modulo_velocidade_minima;
+    slider_velocidade.max = modulo_velocidade_maxima;
+
+    const slider_number = document.getElementById("slider_velocidade_texto");
+    slider_number.innerText = ((9*slider_velocidade.value + modulo_velocidade_maxima - 10*modulo_velocidade_minima)/(modulo_velocidade_maxima - modulo_velocidade_minima)).toFixed(1);
+    let velocidade = slider_velocidade.value;
+    
+    const slider_angulo = document.getElementById("slider_angulo");
+    slider_angulo.min = 30;
+    slider_angulo.max = 60;
+
+    const slider_angulo_number = document.getElementById("slider_angulo_texto");
+    slider_angulo.value = 45;
+    slider_angulo_number.innerText = slider_angulo.value + "º";
+    let angulo = slider_angulo.value;
+    
+    const arrow = document.querySelector(".arrow");
+    arrow.style.bottom = `${0.5*ball.clientWidth}px`;
+    arrow.style.borderBottom = `${velocidade}px solid blue`;
+    arrow.style.transform = `rotate(${angulo}deg)`;
+
+    slider_velocidade.addEventListener("input", () => {
+      slider_number.innerText = ((9*slider_velocidade.value + modulo_velocidade_maxima - 10*modulo_velocidade_minima)/(modulo_velocidade_maxima - modulo_velocidade_minima)).toFixed(1);
+      velocidade = slider_velocidade.value;
+      arrow.style.borderBottom = `${velocidade}px solid blue`;
+    });
+
+    slider_angulo.addEventListener("input", () => {
+      slider_angulo_number.innerText = slider_angulo.value + "º";
+      angulo = slider_angulo.value;
+      arrow.style.transform = `rotate(${90-angulo}deg)`;
+    });
+    
+    const startAnimation = () => {
+      const r =  Math.floor(Math.random() * 256);
+      const g =  Math.floor(Math.random() * 256);
+      const b =  Math.floor(Math.random() * 256);
+      context.beginPath();
+      context.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+      context.moveTo(ball.clientWidth/4, canvas.height - ball.clientHeight/4);
+      
+      let tempo = 0;
+      let velocidade_y_inicial = velocidade*Math.sin(angulo/180 * Math.PI);
+      let velocidade_x = velocidade*Math.cos(angulo/180 * Math.PI);
+      let going_up = true;
+
+      clearInterval(timerLancar);
+      timerLancar = setInterval(() => {     
+        lancar(velocidade_y_inicial,
+          velocidade_x,
+          tempo,
+          going_up,
+          r, g, b,
+          );
+        tempo += .05;
+      }, 5);
+    };
+
+    const stopAnimation = () => {
+      clearInterval(timerLancar);
+    };
+
+    const lancar = (velocidade_y_inicial, velocidade_x, tempo, going_up, r, g, b) => {
+      let distancia = (velocidade_x * tempo)/containerWidth*100;
+
+      ball.style.left =  distancia + "%";
+      let altura = (velocidade_y_inicial*tempo + 0.5*gravidade * tempo * tempo)/containerHeight*100;
+      let velocidade_y = velocidade_y_inicial + gravidade*tempo;
+      going_up = velocidade_y < 0 ? false : true;
+
+      ball.style.bottom = altura + '%';
+      ball_rect = ball.getBoundingClientRect();
+
+      let current_ball_x = distancia*canvas.width/100 + ball.clientWidth/4;
+      let current_ball_y = canvas.height - altura*canvas.height/100 - ball.clientHeight/4;
+
+      context.lineTo(current_ball_x, current_ball_y);
+      context.stroke();
+      
+      if (altura <= 0 && !going_up){
+        stopAnimation();
+        ball.style.bottom = '0%';
+      }
+    }
+    const launchButton = document.getElementById("launchButton");
+    launchButton.addEventListener("click", startAnimation);
+
+  </script>
+</body>
+</html>

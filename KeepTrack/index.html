@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .forehead{
+      margin: 0 auto;
+      margin-top: calc(50vh - 50px);
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      background-color: aquamarine;
+    }
+    .container{
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: bisque;
+    }
+    .container:before{
+      display: block;
+      content: '';
+      width: 100px;
+      height: 50px;
+      position: absolute;
+      bottom: 62.5px;
+      border-radius: 100%;
+      border-top: 5px solid #000;
+    }
+    .eye-left, .eye-right{
+      position: relative;
+      margin: 0 auto;
+      top: calc(50% - 10px);
+      height: 20px;
+      width: 20px;
+      color: white;
+      background-color: black;
+      display: flex;
+      justify-content: end;
+      border-radius: 50%;
+    }
+    .eye-ball{
+      margin:2.5px;
+      border-radius: 50%;
+      width: 5px;
+      height: 5px;
+      background-color: white;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="forehead">
+    <div class="container left">
+      <div class="eye-left"> 
+        <div class="eye-ball">
+        </div>
+      </div>
+    </div>    
+    <div class="container right">
+      <div class="eye-right"> 
+        <div class="eye-ball">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const container_left = document.querySelector(".container.left");
+    const container_right = document.querySelector(".container.right");
+    const rect_left = container_left.getBoundingClientRect();
+    const rect_right = container_left.getBoundingClientRect();
+
+    const eye_left = document.querySelector(".eye-left");
+    const eye_right = document.querySelector(".eye-right");
+
+    eye_left.style.transform = `rotate(45deg)`;
+    eye_right.style.transform = `rotate(45deg)`;
+
+
+    document.addEventListener('mousemove', (e) =>{
+      mouse_x = e.clientX;
+      mouse_y = e.clientY;
+
+      rect_left_x = rect_left.left + 50;
+      rect_left_y = rect_left.top + 50;
+      rect_right_x = rect_right.right + 50;
+      rect_right_y = rect_right.top + 50;
+
+      rel_left_x = (mouse_x - rect_left_x);
+      rel_left_y = -1*(mouse_y - rect_left_y);
+
+      rel_right_x = (mouse_x - rect_right_x);
+      rel_right_y = -1*(mouse_y - rect_right_y);
+      
+      let deg_left = Math.atan(Math.abs(rel_left_y) / Math.abs(rel_left_x))*180 / Math.PI;
+      let deg_right = Math.atan(Math.abs(rel_right_y) / Math.abs(rel_right_x))*180 / Math.PI;
+
+
+      if (rel_left_x < 0 && rel_left_y > 0){
+        deg_left = 180 - deg_left;
+      }
+      if (rel_left_x < 0 && rel_left_y < 0){
+        deg_left =  180 + deg_left;
+      }
+      if (rel_left_x > 0 && rel_left_y < 0){
+        deg_left = 360 - deg_left;
+      }
+
+      if (rel_right_x < 0 && rel_right_y > 0){
+        deg_right = 180 - deg_right;
+      }
+      if (rel_right_x < 0 && rel_right_y < 0){
+        deg_right =  180 + deg_right;
+      }
+      if (rel_right_x > 0 && rel_right_y < 0){
+        deg_right = 360 - deg_right;
+      }
+
+      deg_left -= 45;
+      deg_right -= 45;
+
+      eye_left.style.transform = `rotate(${-deg_left}deg)`;
+      eye_right.style.transform = `rotate(${-deg_right}deg)`;
+
+    })
+    
+  </script>
+</body>
+</html>
