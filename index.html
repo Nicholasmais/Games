@@ -11,6 +11,7 @@
       height: 50vh;
       border-bottom: 5px solid black;
       position: relative;
+      /* background-color: aquamarine; */
     }
 
     .ball{
@@ -20,11 +21,20 @@
       width: 15px;    
       position: absolute;
     }
+
+    #trajectoryCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
   </style>
 </head>
 <body>  
   <div class="container">
-    <div class="ball" id="ball"></div>    
+    <div class="ball" id="ball"></div>
+    <canvas id="trajectoryCanvas"></canvas> 
   </div>
   <div class="slider-row">
     <input type="range" id="slider">
@@ -33,12 +43,29 @@
   <button id="launchButton">Lançar</button>
   <script>
     const container = document.querySelector(".container");
-    const containerHeight = container.clientHeight;    
-    const containerWidth = container.clientWidth;        
+    const containerHeight = container.clientHeight;
+    const containerWidth = container.clientWidth;
 
     const ball = document.getElementById("ball");
     ball.style.left = "0%";
     ball.style.bottom = "0%";
+    
+    let ballTop = ball.offsetTop - container.offsetTop;
+    let ballLeft = ball.offsetLeft - container.offsetLeft;
+    // console.log(ball.offsetTop, ball.offsetLeft);
+    // console.log(container.offsetTop,container.offsetLeft)
+    
+    let containerBottom = container.offsetTop + containerHeight;
+    let containerRight = container.offsetLeft + containerWidth;
+
+    // console.log("Offset Inferior: " + containerBottom + ", Offset Direita: " + containerRight);
+
+    // Encontre o elemento do canvas usando o ID
+    const canvas = document.getElementById("trajectoryCanvas");
+
+    // Configure o contexto 2D do canvas
+    const context = canvas.getContext("2d");    
+
     let isRight = false;    
     let timerLancar;
     const gravidade = -10;
@@ -46,7 +73,7 @@
     const modulo_velocidade_maxima = (1/Math.sin(angulo_para_altura_distancia_max))*Math.sqrt(-2*gravidade*containerHeight);
     
     const slider = document.getElementById("slider");
-    slider.min = 0;
+    slider.min = modulo_velocidade_maxima / 1.5;
     slider.max = modulo_velocidade_maxima;
 
     const slider_number = document.getElementById("slider_velocidade");
@@ -59,13 +86,20 @@
     });    
     
     const startAnimation = () => {
+      const r =  Math.floor(Math.random() * 256);
+      const g =  Math.floor(Math.random() * 256);
+      const b =  Math.floor(Math.random() * 256);
+      context.beginPath();
+      context.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+      context.moveTo(ball.clientWidth/2, canvas.height);
+      
       let tempo = 0;
       let velocidade_y_inicial = velocidade*Math.sin(angulo_para_altura_distancia_max);
       let velocidade_x = velocidade*Math.cos(angulo_para_altura_distancia_max);
       let going_up = true;
       clearInterval(timerLancar);
       timerLancar = setInterval(() => {     
-        lancar(velocidade_y_inicial, velocidade_x, tempo, going_up);
+        lancar(velocidade_y_inicial, velocidade_x, tempo, going_up, r, g, b);
         tempo += .05;
       }, 5);
     };
@@ -74,20 +108,24 @@
       clearInterval(timerLancar);
     };
 
-    const lancar = (velocidade_y_inicial, velocidade_x, tempo, going_up) => {
+    const lancar = (velocidade_y_inicial, velocidade_x, tempo, going_up, r, g, b) => {
       let distancia = (velocidade_x * tempo)/containerWidth*100;
       ball.style.left =  distancia + "%";
-
       let altura = (velocidade_y_inicial*tempo + 0.5*gravidade * tempo * tempo)/containerHeight*100;
       let velocidade_y = velocidade_y_inicial + gravidade*tempo;
       going_up = velocidade_y < 0 ? false : true;
+
       ball.style.bottom = altura + '%';
+      ball_rect = ball.getBoundingClientRect();
+      context.lineTo(distancia*container.clientWidth/100 + ball.clientWidth/2,canvas.height - altura*canvas.height/100);
+      context.stroke();
+      
+      
       if (altura <= 0 && !going_up){
         stopAnimation();
         ball.style.bottom = '0%';
       }
     }
-
     const launchButton = document.getElementById("launchButton");
     launchButton.addEventListener("click", startAnimation);
 
