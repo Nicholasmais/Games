@@ -7,7 +7,7 @@
   <style>
     .container{
       width: 70vw;
-      margin: 5vh auto;
+      margin: 0 auto;
       border-bottom: 5px solid black;
       position: relative;
       background-color: aquamarine;
@@ -17,9 +17,44 @@
     .ball{
       background-color: black;
       border-radius: 50%;
-      height: 15px;
-      width: 15px;    
       position: absolute;
+    }
+
+    .target{
+      position: absolute;
+      background-color: brown;
+      bottom:0;
+      animation: move_target infinite linear 5s;
+    }
+
+    @keyframes move_target {
+      0% {
+        right:0;
+      }
+      50% {
+        right: 50%;
+      }
+      100% {
+        right:0;
+      }
+    }
+
+    .explosion {
+      background-image:url("https://pngimg.com/uploads/explosion/explosion_PNG15367.png");
+      position: absolute;
+      background-size: cover;
+      display: none;
+    }
+
+    @keyframes explode {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
     }
 
     .arrow {
@@ -51,7 +86,9 @@
   <div class="container">
     <div class="ball" id="ball"></div>
     <div class="arrow"></div>
-    <canvas id="trajectoryCanvas"></canvas> 
+    <canvas id="trajectoryCanvas"></canvas>
+    <div class="target"></div>
+    <div class="explosion"></div>
   </div>
   <div class="slider-row">
     <span>Potência</span>
@@ -74,6 +111,9 @@
     const container = document.querySelector(".container");
     const containerWidth = container.clientWidth;
 
+    ball.style.width = `${containerWidth/30}px`;
+    ball.style.height = `${containerWidth/30}px`;
+    
     const canvas = document.getElementById("trajectoryCanvas");
     const context = canvas.getContext("2d");
 
@@ -158,6 +198,10 @@
       clearInterval(timerLancar);
     };
 
+    const target = document.querySelector(".target");
+    target.style.width = ball.clientWidth + "px";
+    target.style.height = ball.clientHeight + "px";
+
     const lancar = (velocidade_y_inicial, velocidade_x, tempo, going_up, r, g, b) => {
       let distancia = (velocidade_x * tempo)/containerWidth*100;
 
@@ -174,10 +218,50 @@
 
       context.lineTo(current_ball_x, current_ball_y);
       context.stroke();
+
+      const computedStyle = getComputedStyle(target);
+      const left_distance_to_right_margin = parseInt(computedStyle.right) / containerWidth * 100;
       
+      const ball_center_percentage = (current_ball_x / containerWidth * 100).toFixed(0);
+      const target_center_percentage = 100-left_distance_to_right_margin.toFixed(0);
+
+     checkColission();
+     
       if (altura <= 0 && !going_up){
         stopAnimation();
         ball.style.bottom = '0%';
+        ball.style.left = '0%';
+      }
+    }
+
+    const checkColission = () => {
+      const ballRect = ball.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      
+      const ballLeft = ballRect.left - container.getBoundingClientRect().left;
+      const ballBottom = containerHeight - (ballRect.bottom - container.getBoundingClientRect().top);
+      
+      const targetLeft = targetRect.left - container.getBoundingClientRect().left;
+      const targetBottom = containerHeight - (targetRect.bottom - container.getBoundingClientRect().top);
+      
+      if (
+        ballLeft >= targetLeft &&
+        ballLeft <= targetLeft + targetRect.width &&
+        ballBottom >= targetBottom &&
+        ballBottom <= targetBottom + targetRect.height
+      ) {
+        console.log("Colisão com o alvo!");
+        const explosion = document.querySelector(".explosion");
+        explosion.style.left = 0.9*ballLeft + "px";
+        explosion.style.bottom = ballBottom + "px";
+        explosion.style.display = "block";
+        explosion.classList.add("explode");
+        explosion.style.width = 5*ball.clientWidth + "px";
+        explosion.style.height = 5*ball.clientHeight + "px";
+        setTimeout(() => {
+          explosion.style.display = "none";
+          explosion.classList.remove("explode");
+        }, 500);
       }
     }
     const launchButton = document.getElementById("launchButton");
