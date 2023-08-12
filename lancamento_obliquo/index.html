@@ -6,7 +6,7 @@
   <title>Document</title>
   <style>
     .container{
-      width: 90vw;
+      width: 70vw;
       margin: 5vh auto;
       border-bottom: 5px solid black;
       position: relative;
@@ -75,7 +75,11 @@
     const containerWidth = container.clientWidth;
 
     const canvas = document.getElementById("trajectoryCanvas");
-    const context = canvas.getContext("2d");    
+    const context = canvas.getContext("2d");
+
+    const slider_angulo = document.getElementById("slider_angulo");
+    slider_angulo.min = 0;
+    slider_angulo.max = 90;
 
     let isRight = false;    
     let timerLancar;
@@ -83,7 +87,8 @@
 
     const modulo_velocidade_maxima = Math.sqrt(-1*gravidade*containerWidth);
     const modulo_velocidade_minima = 0.25*modulo_velocidade_maxima;
-    const altura_maxima_container = (3*modulo_velocidade_maxima*modulo_velocidade_maxima) / (-8*gravidade);
+    // const altura_maxima_container = (3*modulo_velocidade_maxima*modulo_velocidade_maxima) / (-8*gravidade);
+    const altura_maxima_container = modulo_velocidade_maxima*modulo_velocidade_maxima*(Math.pow(Math.sin(slider_angulo.max/180 * Math.PI), 2))/(-2*gravidade);
     
     container.style.height = altura_maxima_container + ball.clientHeight + "px";
     const containerHeight = container.clientHeight;
@@ -93,27 +98,29 @@
     slider_velocidade.max = modulo_velocidade_maxima;
 
     const slider_number = document.getElementById("slider_velocidade_texto");
-    slider_number.innerText = ((9*slider_velocidade.value + modulo_velocidade_maxima - 10*modulo_velocidade_minima)/(modulo_velocidade_maxima - modulo_velocidade_minima)).toFixed(1);
-    let velocidade = slider_velocidade.value;
-    
-    const slider_angulo = document.getElementById("slider_angulo");
-    slider_angulo.min = 30;
-    slider_angulo.max = 60;
+    let potencia = ((9*slider_velocidade.value + modulo_velocidade_maxima - 10*modulo_velocidade_minima)/(modulo_velocidade_maxima - modulo_velocidade_minima)).toFixed(1);
+    slider_number.innerText = potencia;
+    let velocidade = slider_velocidade.value;       
 
     const slider_angulo_number = document.getElementById("slider_angulo_texto");
     slider_angulo.value = 45;
     slider_angulo_number.innerText = slider_angulo.value + "º";
     let angulo = slider_angulo.value;
-    
+
+    let blue_color = -255/9*slider_number.innerText + 2550/9;
+    let red_color = 255/9*(slider_number.innerText-1);
     const arrow = document.querySelector(".arrow");
     arrow.style.bottom = `${0.5*ball.clientWidth}px`;
-    arrow.style.borderBottom = `${velocidade}px solid blue`;
+    arrow.style.borderBottom = `${velocidade}px solid rgb(${red_color},0,${blue_color})`;
     arrow.style.transform = `rotate(${angulo}deg)`;
 
     slider_velocidade.addEventListener("input", () => {
-      slider_number.innerText = ((9*slider_velocidade.value + modulo_velocidade_maxima - 10*modulo_velocidade_minima)/(modulo_velocidade_maxima - modulo_velocidade_minima)).toFixed(1);
+      potencia = ((9*slider_velocidade.value + modulo_velocidade_maxima - 10*modulo_velocidade_minima)/(modulo_velocidade_maxima - modulo_velocidade_minima)).toFixed(1);
+      slider_number.innerText = potencia;
       velocidade = slider_velocidade.value;
-      arrow.style.borderBottom = `${velocidade}px solid blue`;
+      blue_color = -255/9*slider_number.innerText + 2550/9;
+      red_color = 255/9*(slider_number.innerText-1);
+      arrow.style.borderBottom = `${velocidade}px solid rgb(${red_color},0,${blue_color})`;
     });
 
     slider_angulo.addEventListener("input", () => {
