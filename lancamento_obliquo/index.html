@@ -24,7 +24,7 @@
       position: absolute;
       background-color: brown;
       bottom:0;
-      animation: move_target infinite linear 5s;
+      /*animation: move_target infinite linear 5s;*/
     }
 
     @keyframes move_target {
@@ -99,6 +99,10 @@
     <span>Inclinação</span>
     <input type="range" id="slider_angulo">
     <span id="slider_angulo_texto"></span>
+  </div>
+  <div class="slider-row">
+    <span>Resistência do ar</span>
+    <input type="checkbox" name="" id="resistencia">
   </div>
   <div class="slider-row">
     <button id="launchButton">Lançar</button>
@@ -179,14 +183,16 @@
       
       let tempo = 0;
       let velocidade_y_inicial = velocidade*Math.sin(angulo/180 * Math.PI);
-      let velocidade_x = velocidade*Math.cos(angulo/180 * Math.PI);
+      let velocidade_x_inicial = velocidade*Math.cos(angulo/180 * Math.PI);
       let going_up = true;
+      let m = 1;
+      let k = 0.1;
 
       clearInterval(timerLancar);
       timerLancar = setInterval(() => {     
         lancar(velocidade_y_inicial,
-          velocidade_x,
-          tempo,
+          velocidade_x_inicial,
+          tempo, m, k, 
           going_up,
           r, g, b,
           );
@@ -199,20 +205,40 @@
     };
 
     const target = document.querySelector(".target");
+    const res = document.querySelector("#resistencia");
     target.style.width = ball.clientWidth + "px";
     target.style.height = ball.clientHeight + "px";
 
-    const lancar = (velocidade_y_inicial, velocidade_x, tempo, going_up, r, g, b) => {
-      let distancia = (velocidade_x * tempo)/containerWidth*100;
+    const lancar = (velocidade_y_inicial, velocidade_x_inicial, tempo, m, k, going_up, r, g, b) => {
+      let distancia, altura, velocidade_y, velocidade_x;
+      let exponencial = Math.pow(Math.E, -k/m*tempo);
+      if (res.checked){
+        distancia = (m/k*velocidade_x_inicial*(1-exponencial))/containerWidth*100;
+        velocidade_x = velocidade_x_inicial*exponencial;
+        if (angulo != 0){
+          altura = (-m*Math.abs(gravidade)*tempo/k + (m*Math.abs(gravidade) + k*velocidade_y_inicial)/k*(m/k*(1-exponencial)))/containerHeight*100;
+          velocidade_y = (m*Math.abs(gravidade) + k*velocidade_y_inicial)/k * exponencial - m*Math.abs(gravidade)/k;
+        }
+        else{
+          altura = 0;
+          velocidade_y = velocidade_y_inicial;
+        }
+      }
+      else{
+        distancia = (velocidade_x_inicial * tempo)/containerWidth*100;
+        if (angulo != 0){
+          altura = angulo != 0 ? (velocidade_y_inicial*tempo + 0.5*gravidade * tempo * tempo)/containerHeight*100 : 0;
+          velocidade_y = angulo != 0 ? velocidade_y_inicial + gravidade*tempo : velocidade_y_inicial; 
+          velocidade_x = velocidade_x_inicial;       
+        }
+      }
 
-      ball.style.left =  distancia + "%";
-      let altura = (velocidade_y_inicial*tempo + 0.5*gravidade * tempo * tempo)/containerHeight*100;
-      let velocidade_y = velocidade_y_inicial + gravidade*tempo;
+      ball.style.left =  distancia + "%";      
+      ball.style.bottom = altura + '%';
+
       going_up = velocidade_y < 0 ? false : true;
 
-      ball.style.bottom = altura + '%';
       ball_rect = ball.getBoundingClientRect();
-
       let current_ball_x = distancia*canvas.width/100 + ball.clientWidth/4;
       let current_ball_y = canvas.height - altura*canvas.height/100 - ball.clientHeight/4;
 
@@ -225,9 +251,8 @@
       const ball_center_percentage = (current_ball_x / containerWidth * 100).toFixed(0);
       const target_center_percentage = 100-left_distance_to_right_margin.toFixed(0);
 
-     checkColission();
-     
-      if (altura <= 0 && !going_up){
+      //checkColission();
+      if ((altura <= 0 && !going_up && angulo != 0) || (angulo == 0 && distancia > 100) || (angulo == 0 && velocidade_x < 0.9)){
         stopAnimation();
         ball.style.bottom = '0%';
         ball.style.left = '0%';
@@ -245,10 +270,10 @@
       const targetBottom = containerHeight - (targetRect.bottom - container.getBoundingClientRect().top);
       
       if (
-        ballLeft >= targetLeft &&
-        ballLeft <= targetLeft + targetRect.width &&
-        ballBottom >= targetBottom &&
-        ballBottom <= targetBottom + targetRect.height
+        1.1*ballLeft >= targetLeft &&
+        .9*ballLeft <= targetLeft + targetRect.width &&
+        1.1*ballBottom >= targetBottom &&
+        .9*ballBottom <= targetBottom + targetRect.height
       ) {
         console.log("Colisão com o alvo!");
         const explosion = document.querySelector(".explosion");
